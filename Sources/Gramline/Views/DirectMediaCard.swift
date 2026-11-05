@@ -4,16 +4,20 @@ import SwiftUI
 struct DirectMediaCard: View {
     let media: DirectMedia
     let service: SharedPostService
+    let isOwn: Bool
     let open: () -> Void
     @State private var preview: URL?
 
     var body: some View {
         if let restriction = media.restriction {
-            VStack(alignment: .leading, spacing: 6) {
-                Label("Disappearing \(media.label.lowercased())", systemImage: media.kind == "video" ? "play.rectangle" : "eye")
-                    .fontWeight(.semibold)
-                Text(restriction).font(.caption).opacity(0.7)
-            }.frame(maxWidth: 260, alignment: .leading)
+            Button(action: open) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("\(isOwn ? "Disappearing" : (media.canOpenRestricted ? "View" : "Viewed")) \(media.label.lowercased())", systemImage: media.canOpenRestricted ? (media.kind == "video" ? "play.fill" : "eye") : "eye.slash")
+                        .fontWeight(.semibold)
+                    Text(restriction).font(.caption).opacity(0.7)
+                }.frame(maxWidth: 260, alignment: .leading)
+            }.buttonStyle(.plain).disabled(isOwn || !media.canOpenRestricted)
+                .accessibilityLabel("\(media.label), \(restriction)")
         } else {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: 8) {

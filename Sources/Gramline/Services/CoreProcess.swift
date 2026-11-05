@@ -16,7 +16,7 @@ final class CoreProcess {
     func start() throws {
         guard process == nil else { return }
         guard let executable = Bundle.main.url(forAuxiliaryExecutable: "insta-core") else {
-            throw CoreError(code: "helper_missing", message: "The connection helper is missing. Rebuild InstaDM using script/build_and_run.sh.")
+            throw CoreError(code: "helper_missing", message: "The connection helper is missing. Rebuild Gramline using script/build_and_run.sh.")
         }
         let child = Process(), stdin = Pipe(), stdout = Pipe()
         let current = UUID(); generation = current
@@ -47,7 +47,7 @@ final class CoreProcess {
                 for try await bytes in stream {
                     guard let self, self.generation == current else { return }
                     let frame = try JSONDecoder().decode(WireFrame.self, from: bytes)
-                    guard frame.v == 1 else { throw CoreError(code: "version", message: "InstaDM and its helper use different protocol versions.") }
+                    guard frame.v == 1 else { throw CoreError(code: "version", message: "Gramline and its helper use different protocol versions.") }
                     if let id = frame.id, let continuation = self.pending.removeValue(forKey: id) {
                         self.deadlines.removeValue(forKey: id)?.cancel()
                         if let error = frame.error { continuation.resume(throwing: error) }

@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "InstaDM",
+    name: "Gramline",
     platforms: [.macOS(.v14)],
-    products: [.executable(name: "InstaDM", targets: ["InstaDM"])],
+    products: [.executable(name: "Gramline", targets: ["Gramline"])],
     targets: [
         .systemLibrary(name: "CSQLite", pkgConfig: "sqlite3"),
         .target(name: "DMCore", dependencies: ["CSQLite"]),
-        .executableTarget(name: "InstaDM", dependencies: ["DMCore"]),
+        .executableTarget(name: "Gramline", dependencies: ["DMCore"]),
         .testTarget(name: "DMCoreTests", dependencies: ["DMCore"])
     ]
 )

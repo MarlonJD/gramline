@@ -53,7 +53,7 @@ struct SidebarView: View {
             HStack(spacing: 10) {
                 AvatarView(name: store.account?.username ?? "?", url: store.account?.avatarURL, cache: store.appearanceCache, size: 28)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(store.account.map { "@\($0.username)" } ?? "Welcome to InstaDM").font(.callout).fontWeight(.medium).lineLimit(1)
+                    Text(store.account.map { "@\($0.username)" } ?? "Welcome to Gramline").font(.callout).fontWeight(.medium).lineLimit(1)
                     Text(store.account == nil ? "Your inbox, on your Mac" : "Personal account").font(.caption).foregroundStyle(foreground.opacity(0.65))
                 }
                 Spacer()

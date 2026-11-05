@@ -38,12 +38,16 @@ struct ComposerView: View {
                     .buttonStyle(.borderedProminent).clipShape(RoundedRectangle(cornerRadius: 12))
                     .disabled(!store.canSend).help("Send message (Return)")
             }
-            HStack {
-                if store.isPreparingAttachments || store.isSendingAttachments { ProgressView().controlSize(.mini) }
-                Text(store.isPreparingAttachments ? "Preparing attachments…" : store.isSendingAttachments ? "Sending attachments…" : store.state == "connected" ? "Return to send · Shift+Return for a new line · ⌘V to paste" : "You’re offline. Your draft is saved on this Mac.")
-                Spacer()
-                if store.draft.count > 900 { Text("\(store.draft.count)/1000").foregroundStyle(store.draft.count > 1000 ? .red : .secondary) }
-            }.font(.caption2).foregroundStyle(palette?.composerText?.opacity(0.65) ?? .secondary)
+            if store.isPreparingAttachments || store.isSendingAttachments || store.state != "connected" || store.draft.count > 900 {
+                HStack {
+                    if store.isPreparingAttachments || store.isSendingAttachments { ProgressView().controlSize(.mini) }
+                    if store.isPreparingAttachments { Text("Preparing attachments…") }
+                    else if store.isSendingAttachments { Text("Sending attachments…") }
+                    else if store.state != "connected" { Text("You’re offline. Your draft is saved on this Mac.") }
+                    Spacer()
+                    if store.draft.count > 900 { Text("\(store.draft.count)/1000").foregroundStyle(store.draft.count > 1000 ? .red : .secondary) }
+                }.font(.caption2).foregroundStyle(palette?.composerText?.opacity(0.65) ?? .secondary)
+            }
         }.padding(18)
             .foregroundStyle(palette?.composerText ?? .primary)
             .background(palette?.composer ?? .clear)

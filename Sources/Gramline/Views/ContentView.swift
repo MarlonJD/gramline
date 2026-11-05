@@ -40,7 +40,7 @@ struct ContentView: View {
                 }
             }
         }
-        .navigationTitle(store.selectedConversation?.title ?? "InstaDM")
+        .navigationTitle(store.selectedConversation?.title ?? "Gramline")
         .toolbarBackground(palette?.chromeBackground ?? Color(nsColor: .windowBackgroundColor), for: .windowToolbar)
         .toolbarBackground(palette == nil ? .automatic : .visible, for: .windowToolbar)
         .toolbarColorScheme(palette?.chromeColorScheme, for: .windowToolbar)

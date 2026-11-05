@@ -8,4 +8,4 @@ export CLANG_MODULE_CACHE_PATH="$ROOT_DIR/.cache/clang"
 export SWIFTPM_MODULECACHE_OVERRIDE="$ROOT_DIR/.cache/clang"
 (cd core && go test -race ./... go.mau.fi/mautrix-meta/pkg/messagix/bloks go.mau.fi/mautrix-meta/pkg/messagix/httpclient)
 swift test --scratch-path "$ROOT_DIR/.build/swift" --cache-path "$ROOT_DIR/.cache/swift" --disable-sandbox
-python3 script/smoke_test.py "$ROOT_DIR/dist/InstaDM.app/Contents/MacOS/insta-core"
+python3 script/smoke_test.py "$ROOT_DIR/dist/Gramline.app/Contents/MacOS/insta-core"

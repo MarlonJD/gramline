@@ -58,6 +58,7 @@ struct ConversationView: View {
         }
         .sheet(item: $viewedMessage) { message in
             if let post = message.sharedPost, let service = store.sharedMedia { SharedPostViewer(post: post, service: service) }
+            else if message.directMedia?.isRestricted == true, let service = store.ravenMedia { RavenMediaViewer(message: message, service: service) }
             else if message.directMedia != nil, let service = store.sharedMedia { DirectMediaViewer(message: message, service: service) }
         }
         .onChange(of: store.selectedID) { _, _ in viewedMessage = nil; store.sharedMedia?.stopPlayback() }
@@ -80,7 +81,7 @@ struct MessageBubble: View {
                 Group {
                     if let post = message.sharedPost, let sharedMedia { SharedPostCard(post: post, service: sharedMedia, open: openPost) }
                     else if let attachment = message.attachment { AttachmentView(attachment: attachment) }
-                    else if let media = message.directMedia, let sharedMedia { DirectMediaCard(media: media, service: sharedMedia, open: openPost) }
+                    else if let media = message.directMedia, let sharedMedia { DirectMediaCard(media: media, service: sharedMedia, isOwn: message.isOwn, open: openPost) }
                     else { Text(message.text).textSelection(.enabled) }
                 }
                     .font(.body).textSelection(.enabled).padding(.horizontal, 14).padding(.vertical, 10)
