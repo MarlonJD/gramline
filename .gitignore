@@ -5,6 +5,7 @@ dist/
 *.xcuserstate
 xcuserdata/
 .swiftpm/
+.codex/
 core/insta-core
 *.sqlite*
 *.log
