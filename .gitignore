@@ -1,0 +1,10 @@
+.build/
+.cache/
+dist/
+.DS_Store
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+core/insta-core
+*.sqlite*
+*.log
