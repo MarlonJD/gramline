@@ -43,6 +43,7 @@ type Backend struct {
 	stopSocket   context.CancelFunc
 	stopSync     context.CancelFunc
 	syncDone     chan struct{}
+	ravenPlan    *ravenPlan
 }
 
 func New(ctx context.Context, sink Sink) *Backend {
@@ -50,6 +51,7 @@ func New(ctx context.Context, sink Sink) *Backend {
 }
 
 func (b *Backend) Close() {
+	b.ravenPlan = nil
 	b.cancelSync()
 	b.finishLogin()
 	b.generation.Add(1)
@@ -246,6 +248,10 @@ func (b *Backend) Handle(parent context.Context, kind string, data json.RawMessa
 		return b.fetchSharedPost(ctx, data)
 	case "message_media":
 		return b.fetchMessageMedia(ctx, data)
+	case "raven_prepare":
+		return b.prepareRaven(ctx, data)
+	case "raven_open":
+		return b.openRaven(ctx, data)
 	case "send_media":
 		mediaCtx, stop := context.WithTimeout(parent, 3*time.Minute)
 		defer stop()

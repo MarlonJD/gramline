@@ -28,6 +28,7 @@ public final class MessageDatabase {
         try execute("CREATE TABLE IF NOT EXISTS drafts (thread TEXT PRIMARY KEY, text TEXT NOT NULL)")
         try execute("CREATE TABLE IF NOT EXISTS read_watermarks (thread TEXT PRIMARY KEY, timestamp INTEGER NOT NULL)")
         try execute("CREATE TABLE IF NOT EXISTS attachment_drafts (thread TEXT PRIMARY KEY, payload TEXT NOT NULL)")
+        try execute("CREATE TABLE IF NOT EXISTS raven_views (thread TEXT NOT NULL, message TEXT NOT NULL, reserved_count INTEGER NOT NULL, PRIMARY KEY(thread,message))")
         try recoverInterruptedSends()
     }
 
@@ -64,6 +65,9 @@ public final class MessageDatabase {
             for var message in messages {
                 guard !message.id.isEmpty, !message.threadID.isEmpty else { continue }
                 let old = try self.message(id: message.id)
+                if message.directMedia?.isRestricted == true, message.directMedia?.viewMode == old?.directMedia?.viewMode {
+                    message.directMedia?.viewState = old?.directMedia?.viewState
+                }
                 var saved = old
                 if message.isOwn && !message.clientID.isEmpty && saved?.attachment?.localPath == nil {
                     saved = try payloads("SELECT payload FROM messages WHERE thread=? AND client=? AND own=1 ORDER BY timestamp LIMIT 1", values: [.text(message.threadID), .text(message.clientID)], as: Message.self).first
@@ -106,9 +110,37 @@ public final class MessageDatabase {
     }
 
     public func deleteMessage(id: String) throws { try execute("DELETE FROM messages WHERE id=?", [.text(id)]) }
+
+    public func setRavenState(thread: String, message id: String, state: String) throws {
+        guard ["opened", "replayed", "unavailable"].contains(state), var message = try message(id: id),
+              message.threadID == thread, message.directMedia?.isRestricted == true else { return }
+        message.directMedia?.viewState = state
+        try execute("UPDATE messages SET payload=? WHERE id=?", [.text(try json(message)), .text(id)])
+    }
+
+    /// Reserve durably before submitting a visual receipt. If the process dies
+    /// or the receipt response is lost, a stale server count cannot reopen it.
+    public func reserveRavenView(thread: String, message: String, seenCount: Int) throws {
+        guard seenCount >= 0 && seenCount < 2 else { throw CoreError(code: "raven_unavailable", message: "This media has already been viewed.") }
+        try transaction {
+            var reserved = 0
+            try rows("SELECT reserved_count FROM raven_views WHERE thread=? AND message=?", [.text(thread), .text(message)]) { reserved = Int(sqlite3_column_int64($0, 0)) }
+            guard seenCount >= reserved else {
+                throw CoreError(code: "raven_pending", message: "Instagram has not confirmed the previous viewing status. Check this media in Instagram before trying again.")
+            }
+            try execute("INSERT INTO raven_views VALUES (?,?,?) ON CONFLICT(thread,message) DO UPDATE SET reserved_count=excluded.reserved_count",
+                        [.text(thread), .text(message), .int(Int64(seenCount + 1))])
+        }
+    }
+
+    /// Only release when the helper proves no receipt entered the transport.
+    public func releaseUnsubmittedRavenView(thread: String, message: String, seenCount: Int) throws {
+        try execute("UPDATE raven_views SET reserved_count=? WHERE thread=? AND message=? AND reserved_count=?",
+                    [.int(Int64(seenCount)), .text(thread), .text(message), .int(Int64(seenCount + 1))])
+    }
     public func deleteConversation(id: String) throws {
         try transaction {
-            for table in ["messages", "sync_anchors", "drafts", "read_watermarks", "attachment_drafts"] { try execute("DELETE FROM \(table) WHERE thread=?", [.text(id)]) }
+            for table in ["messages", "sync_anchors", "drafts", "read_watermarks", "attachment_drafts", "raven_views"] { try execute("DELETE FROM \(table) WHERE thread=?", [.text(id)]) }
             try execute("DELETE FROM conversations WHERE id=?", [.text(id)])
         }
     }

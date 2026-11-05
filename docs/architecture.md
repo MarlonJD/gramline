@@ -2,7 +2,7 @@
 
 ## Ownership
 
-`InstaDM` is a SwiftPM macOS executable. `AppStore` owns account and connection state. Feature views own only presentation and input state. `CoreProcess` starts the packaged helper and manages request IDs, deadlines, private pipes and termination. `SessionKeychain` owns credential persistence. `MessageDatabase` is isolated to the main actor and is the only history writer.
+`Gramline` is a SwiftPM macOS executable. `AppStore` owns account and connection state. Feature views own only presentation and input state. `CoreProcess` starts the packaged helper and manages request IDs, deadlines, private pipes and termination. `SessionKeychain` owns credential persistence. `MessageDatabase` is isolated to the main actor and is the only history writer.
 
 `insta-core` is a Go child process with no listening socket. It adapts the pinned `instameow` client into the app's command/event types. The dependency includes Matrix bridge types for login steps, but no Matrix server, Matrix account or bridge process is instantiated.
 
@@ -73,10 +73,10 @@ The app keeps running after the last window closes. Quit closes stdin and termin
 ## Source boundaries
 
 - `Sources/DMCore`: Codable wire models, framing, SQLite persistence.
-- `Sources/InstaDM/App`: SwiftUI scenes and application lifecycle.
-- `Sources/InstaDM/Views`: login, inbox, conversation, composer and settings.
-- `Sources/InstaDM/Stores`: application state and synchronization coordination.
-- `Sources/InstaDM/Services`: helper process, Keychain and notifications.
+- `Sources/Gramline/App`: SwiftUI scenes and application lifecycle.
+- `Sources/Gramline/Views`: login, inbox, conversation, composer and settings.
+- `Sources/Gramline/Stores`: application state and synchronization coordination.
+- `Sources/Gramline/Services`: helper process, Keychain and notifications.
 - `core/internal/wire`: JSON-lines framing, dispatch and persistence acknowledgements.
 - `core/internal/instagram`: login, model normalization, history, sends and events.
 - `script`: reproducible build/run, tests and packaged-helper smoke test.
@@ -91,7 +91,7 @@ The app keeps running after the last window closes. Quit closes stdin and termin
 
 ## Direct photo and video messages
 
-The Go normalizer preserves ordinary photo/video attachments, mixed albums and Raven viewing modes. Missing media remains an explicit unavailable position. CDN addresses pass the same allowlist as post media. The client does not implement Instagram's consume/replay lifecycle: view-once, replayable and unknown restricted Raven modes expose no URLs, previews or downloadable items. They render a mode-specific phone-opening notice. Keep-in-chat Raven media uses the ordinary viewer.
+The Go normalizer preserves ordinary photo/video attachments, mixed albums and Raven viewing modes. Missing media remains an explicit unavailable position. CDN addresses pass the same allowlist as post media. Restricted Raven history carries no media URLs. An explicit click uses Gramline's native API adapter with the existing signed-in device to resolve the exact message and its viewing state. Swift validates a temporary download, durably reserves the view, then requests a single visual receipt before display. One replay is offered inside the same viewer when the server permits it. The replay rechecks current eligibility without expecting Instagram to return the already-viewed URL again. Closing destroys temporary content; startup cleans leftovers after a crash. Keep-in-chat Raven media uses the ordinary viewer.
 
 Ordinary media shares the bounded account-local media cache and native player with post/Reel viewing. A stale CDN response triggers one `message_media` refresh by exact message ID, using the next known message as a pagination anchor when available. Refreshed metadata is normalized again, so a restricted or removed item cannot fall back to a stale playable URL. Dismissal or conversation changes stop playback.
 

@@ -12,13 +12,13 @@ struct SettingsView: View {
                 if store.account != nil { Button("Sign Out…", role: .destructive) { confirmSignOut = true } }
             }
             Section("Notifications") {
-                Text("Unread messages appear on the Dock icon while InstaDM is running. A + means there may be more. Reading a conversation clears its count.").font(.callout)
+                Text("Unread messages appear on the Dock icon while Gramline is running. A + means there may be more. Reading a conversation clears its count.").font(.callout)
                 Toggle("Show banners and play a sound", isOn: Binding(get: { store.messageAlertsEnabled }, set: { enabled in Task { await store.setMessageAlerts(enabled) } }))
                 Text("Banners are optional. Message contents stay hidden.").font(.caption).foregroundStyle(.secondary)
             }
             Section("On this Mac") {
                 Text("Sessions are stored in Keychain. Conversation history and drafts are stored locally, separately for each account.").font(.callout)
-                Text("InstaDM 0.1.0 · Messaging preview").font(.caption).foregroundStyle(.secondary)
+                Text("Gramline 0.1.0 · Messaging preview").font(.caption).foregroundStyle(.secondary)
                 if !store.loginDiagnostic.isEmpty { Text(store.loginDiagnostic).font(.caption.monospaced()).textSelection(.enabled) }
             }
         }.formStyle(.grouped).frame(width: 480, height: 440)

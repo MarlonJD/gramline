@@ -28,6 +28,7 @@ final class AppStore {
     var showLogin = false
     var loginDiagnostic = ""
     var sharedMedia: SharedPostService?
+    var ravenMedia: RavenMediaService?
     var appearanceCache: SharedMediaCache?
 
     @ObservationIgnored private let core = CoreProcess()
@@ -271,6 +272,7 @@ final class AppStore {
         reconnectTask?.cancel(); syncTask?.cancel()
         core.stop()
         sharedMedia?.close(); sharedMedia = nil
+        ravenMedia?.close(); ravenMedia = nil
         if let cache = appearanceCache { Task { await cache.clear() } }; appearanceCache = nil
         do { try keychain.delete() } catch { present(error); return }
         database = nil; attachmentStore = nil; account = nil; conversations = []; messages = []; draft = ""; attachments = []; selectedID = nil
@@ -287,6 +289,7 @@ final class AppStore {
     }
 
     func shutdown() {
+        ravenMedia?.close()
         sharedMedia?.stopPlayback()
         saveDraft(); reconnectTask?.cancel(); syncTask?.cancel(); network.cancel(); core.stop()
         observers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0); NotificationCenter.default.removeObserver($0) }; observers.removeAll()
@@ -299,6 +302,16 @@ final class AppStore {
             saveDraft(); selectedID = nil; draft = ""; attachments = []; messages = []; cursors = [:]; hasMore = [:]
             let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appending(path: "InstaDM/Accounts/\(newAccount.id)")
             database = try MessageDatabase(url: directory.appending(path: "messages.sqlite"))
+            ravenMedia?.close()
+            if let database {
+                let temporaryMedia = FileManager.default.temporaryDirectory.appending(path: "Gramline/DisappearingMedia/\(newAccount.id)")
+                ravenMedia = RavenMediaService(directory: temporaryMedia, database: database, changed: { [weak self] in try? self?.reload() }) { [weak self] command, data in
+                    guard let self, self.account?.id == newAccount.id else { throw CancellationError() }
+                    let response = try await self.core.request(command, data)
+                    guard self.account?.id == newAccount.id else { throw CancellationError() }
+                    return response
+                }
+            }
             attachmentStore = AttachmentStore(directory: directory.appending(path: "Attachments"))
             if let cache = appearanceCache { Task { await cache.clear() } }
             appearanceCache = SharedMediaCache(directory: directory.appending(path: "Appearance"), byteLimit: 64_000_000)

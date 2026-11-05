@@ -2,12 +2,12 @@ import AppKit
 import SwiftUI
 
 @main
-struct InstaDMApp: App {
+struct GramlineApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var store = AppStore()
 
     var body: some Scene {
-        WindowGroup("InstaDM", id: "inbox") {
+        WindowGroup("Gramline", id: "inbox") {
             ContentView(store: store)
                 .frame(minWidth: 820, minHeight: 560)
                 .task { delegate.store = store; await store.start() }

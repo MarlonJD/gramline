@@ -5,11 +5,14 @@ import SwiftUI
 /// crashes during metadata initialization on the locally tested macOS runtime.
 struct NativeVideoPlayer: NSViewRepresentable {
     let player: AVPlayer
+    var restricted = false
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
-        view.controlsStyle = .floating
+        view.controlsStyle = restricted ? .none : .floating
         view.videoGravity = .resizeAspect
-        view.showsFullScreenToggleButton = true
+        view.showsFullScreenToggleButton = !restricted
+        view.allowsVideoFrameAnalysis = !restricted
+        view.allowsPictureInPicturePlayback = !restricted
         view.player = player
         return view
     }

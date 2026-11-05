@@ -11,7 +11,7 @@ import (
 )
 
 // Restricted Raven media carries its viewing mode, never a downloadable URL.
-// This client does not implement Instagram's consume/replay protocol.
+// Viewing is a separate explicit native-API operation, never history prefetch.
 type DirectMedia struct {
 	Kind     string            `json:"kind"`
 	ViewMode *int              `json:"viewMode,omitempty"`

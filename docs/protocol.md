@@ -45,3 +45,11 @@ Messages can contain `sharedPost`: `mediaID`, `shortcode`, canonical Instagram `
 `shared_post` requires an authenticated client and resolves the post through `instameow.FetchMedia`. Its result contains `author`, `caption`, `items` and `selectedIndex`. Each item has string `id`, `kind` (`image` or `video`), `url`, `previewURL`, `width` and `height`. Album order is preserved, including unavailable children with an empty media URL. `media_unavailable` is a safe failure without upstream bodies. Swift downloads allowed HTTPS CDN URLs directly into a disposable cache, outside command dispatch; media bytes never travel through the pipe.
 
 Messages can also contain `directMedia`: a media `kind`, optional Raven `viewMode`, and ordered `items` using the shared-media item shape. View modes 0 (once), 1 (replay) and unknown restricted modes carry an empty item array; only mode 2 (keep in chat) or ordinary media expose validated download locations. A refresh rechecks the current mode and never uses another message as a substitute.
+
+### Disappearing media
+
+`raven_prepare {threadID, messageID}` looks up the native thread and matches the shared `message_id` exactly. It returns a short-lived token, validated CDN URL, media kind, server viewing count, viewing mode and playback duration. This response is not a message and must never be persisted as history or prefetched. Swift downloads and validates the content before submitting a viewing receipt.
+
+`raven_open {token}` consumes the token once, rechecks the server state and submits one native visual receipt. A successful first opening may return a `replayToken` and `replayDeadline` when Instagram permits another view. That second token uses the already loaded content in the same viewer, rechecks eligibility, and sends its own receipt. No third token is issued. `raven_not_opened` proves the request was rejected before submitting a receipt; other failures may have consumed the view and must not be automatically retried.
+
+Swift records a durable viewing reservation before each receipt. A later server count must advance before another viewing can be reserved. Temporary content is discarded when the viewer closes. Locally stored `directMedia.viewState` contains only opened/replayed/unavailable presentation state, never media addresses.
